@@ -38,7 +38,7 @@ EXEC sp_rename 'customers.Country','country','COLUMN';
 EXEC sp_rename 'customers.Continent','continent','COLUMN';
 EXEC sp_rename 'customers.Birthday','birthday','COLUMN';
 
--- change date format to year-month-day
+--Change date format to year-month-day
 UPDATE sales
 SET order_date = FORMAT(CONVERT(DATE, order_date), 'yyyy-MM-dd');
 
@@ -53,9 +53,9 @@ SET birthday = FORMAT(CONVERT(DATE, birthday), 'yyyy-MM-dd');
 
 --Total sales vs total profit
 WITH tb1 AS (
-    SELECT CEILING(SUM(p.unit_price_usd * s.quantity)) AS total_sales_USD,
-        CEILING(
-            SUM(p.unit_price_usd * s.quantity) - SUM(p.unit_cost_usd * s.quantity)
+    SELECT ROUND(SUM(p.unit_price_usd * s.quantity), 2) AS total_sales_USD,
+        ROUND(
+            SUM(p.unit_price_usd * s.quantity) - SUM(p.unit_cost_usd * s.quantity), 2
         ) AS total_profit_USD
     FROM customers AS c
         JOIN sales AS s ON c.customer_key = s.customer_key
@@ -81,8 +81,8 @@ FROM sales AS s
 GROUP BY p.Brand
 ORDER BY sales DESC;
 
---Top 5 popular color
-SELECT TOP 5 color,
+--Order count by color
+SELECT color,
     SUM(quantity) AS count
 FROM products AS p
     JOIN sales AS s ON s.product_key = p.product_key
@@ -98,7 +98,7 @@ FROM customers AS c
 GROUP BY c.gender
 ORDER BY sales DESC;
 
--- highest profit by brand per category
+--Profit by brand per category
 WITH product AS (
     SELECT brand,
         category,
@@ -131,7 +131,7 @@ WHERE rank = 1
 ORDER BY profit DESC;
 
 
--- orders count by delivery timeframes
+--Orders count by delivery timeframes
 WITH tb1 AS (
     SELECT DATEDIFF(DAY, order_date, delivery_date) days_to_deliver
     FROM sales AS s
@@ -157,7 +157,7 @@ FROM tb2
 GROUP BY days_range
 ORDER BY order_counts DESC;
 
--- adding new column and updaing age value
+--Adding new column and updaing age value
 ALTER TABLE customers
 ADD age NUMERIC;
 
@@ -165,7 +165,7 @@ UPDATE customers
 SET age = DATEDIFF(YEAR, birthday, GETDATE());
 
 --Store sales vs online sales
-WITH sales AS (
+WITH tb1 AS (
     SELECT p.unit_price_usd, s.quantity,
         CASE
             WHEN state = 'Online' THEN 1
@@ -181,7 +181,7 @@ WITH sales AS (
 )
 SELECT CEILING(SUM(unit_price_usd * quantity * online)) AS online_sales,
     CEILING(SUM(unit_price_usd * quantity * store)) AS store_sales
-FROM sales;
+FROM tb1;
 
 --Sales by age range
 WITH table1 AS (
@@ -198,3 +198,4 @@ SELECT age_range, COUNT(*) AS count
 FROM table1
 GROUP BY age_range
 ORDER BY count DESC;
+
